@@ -94,7 +94,9 @@ void InitMap(){
 				printf(" ");
 			}
 		}
-	}		
+	}	
+	printf("\n");
+	printf("提示: w:上  s:下 a:左  d:右  作者:胡海昌\n");
 }
 
 //初始化食物
@@ -264,13 +266,16 @@ void Score(){
 	pos.Y=MAP_HEIGHT+1;
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),pos);
 	printf("游戏结束，总得分=%d\n",score);
+	Sleep(2000);
+	getch();
 }
 /**********************************************************************************************/
 int main(int argc, char* argv[])
 {
+	
 	Init();
 	GameLoop(); 
-	Score();  
+	Score();	
 	return 0;
 
 }
