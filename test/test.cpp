@@ -54,14 +54,7 @@ void DrawChar(int x,int y,char ch){
 	putchar(ch);
 }
 
-//得到字符
-char GetChar(int x,int y){
-	COORD pos;
-	pos.X=x;
-	pos.Y=y;
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),pos);
-	return getchar();
-}
+
 
 //初始化贪吃蛇 
 void InitSnack(){
@@ -95,7 +88,7 @@ void InitMap(){
 				printf("|\n");
 			}else if(i==MAP_HEIGHT){
 				//底边框
-				printf("_"); 
+				printf("-"); 
 			}
 			else{
 				printf(" ");
@@ -107,14 +100,28 @@ void InitMap(){
 //初始化食物
 void InitFood(){
 	int w=0;
+	int m=0,n=0,t=0;
 	srand( (unsigned)time(NULL) );
 	g_food.x = rand() %MAP_WIDTH;
 	g_food.y =rand() % MAP_HEIGHT;
 	while(w==0){ //保证食物不会在蛇上
 		for(int i =0;i<g_snack.size;i++){
-		if(g_food.x==g_snack.pos[i].x && g_food.y==g_snack.pos[i].y){
-			g_food.x = rand() %MAP_WIDTH;
-			g_food.y =rand() % MAP_HEIGHT;
+			if(g_food.x==g_snack.pos[i].x && g_food.y==g_snack.pos[i].y){ 
+			/*g_food.x = rand() % MAP_WIDTH;
+			g_food.y = rand() % MAP_HEIGHT;*/
+				//重新生成
+				g_food.x=m;
+				g_food.y=n;
+				if(n==t && m<60){
+				m++;	
+				}else{
+					n++;
+					t++;
+					m=0;
+				  }
+				if(n>=20){
+					break;
+				  }
 		}else{
 			w=1;
 			break;
@@ -158,6 +165,7 @@ void SanckMove(int key){
 	}
 }
 
+
 //吃东西
 void EatFood(){
 	if(g_snack.pos[0].x==g_food.x && g_snack.pos[0].y==g_food.y){    
@@ -172,17 +180,34 @@ void EatFood(){
 //判断游戏是否结束
 int GameOver(){
 	//撞自己
-	for(int i =1 ; i<g_snack.size-1 ; i++){
+	for(int i = 1; i<g_snack.size-1 ; i++){
 		if(g_snack.pos[0].x==g_snack.pos[i].x && g_snack.pos[0].y==g_snack.pos[i].y){
 		return 1;
 		}
 	}
 	//撞墙
-	if(g_snack.pos[0].x>=MAP_WIDTH || g_snack.pos[0].y >=MAP_HEIGHT){ 
+	if(g_snack.pos[0].x>MAP_WIDTH || g_snack.pos[0].y >=MAP_HEIGHT || g_snack.pos[0].x<0 || g_snack.pos[0].y <0  ){      
 		return 1;	
 	}else {
 		return 0;
 	}
+}
+
+//判断是否回头
+int IsBack(int key ,int last_key){
+	if(last_key=='w' || last_key=='W'){
+		if(key=='s' || key=='S'){return 1;}
+	}
+	if(last_key=='s' || last_key=='S'){
+		if(key=='w' || key=='W'){return 1;}
+	}
+	if(last_key=='d' || last_key=='D'){
+		if(key=='a' || key=='A'){return 1;}
+	}
+	if(last_key=='a' || last_key=='A'){
+		if(key=='d' || key=='D'){return 1;}
+	}
+	return 0;
 }
 
 //更新屏幕
@@ -192,6 +217,7 @@ void UpdateScreen(){
 	//更新食物
 	EatFood();
 }
+
 
 /*********************************************************************************************/
 
@@ -203,13 +229,18 @@ void Init(){
 }
 
 void GameLoop(){
-	int key=0;
+	int key=0,last_key=0;
 	score=0;
 	while(1){
 		HideCursor();		
-		//检测按键输入
+		//检测按键输入  
 		if(_kbhit()){
 			key = _getch();
+			if(IsBack(key,last_key)==1){ 
+				key = last_key;
+				continue;
+			}
+			last_key = key;
 		}
 		if(key=='q'|| key=='Q'){
 			return;
@@ -240,7 +271,6 @@ int main(int argc, char* argv[])
 	Init();
 	GameLoop(); 
 	Score();  
-
 	return 0;
 
 }
