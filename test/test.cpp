@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <time.h>
+#include <conio.h>
 
 //定义隐藏光标函数
 void HideCursor()
@@ -41,6 +42,8 @@ typedef struct Snack{
 Snack g_snack; 
 //定义食物
 Position g_food;
+//定义分数
+int score;
 
 //画字符
 void DrawChar(int x,int y,char ch){
@@ -49,6 +52,15 @@ void DrawChar(int x,int y,char ch){
 	pos.Y=y;
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),pos);
 	putchar(ch);
+}
+
+//得到字符
+char GetChar(int x,int y){
+	COORD pos;
+	pos.X=x;
+	pos.Y=y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),pos);
+	return getchar();
 }
 
 //初始化贪吃蛇 
@@ -108,48 +120,126 @@ void InitFood(){
 			break;
 		}
 	 }
- }
-	
+ }	
 	DrawChar(g_food.x,g_food.y,'#');
+}
+
+//用按键控制蛇移动wsad
+void SanckMove(int key){
+	int delta_x = 0;
+	int delta_y = 0;
+	if(key=='W'|| key=='w'){
+		delta_x = 0;
+		delta_y = -1;
+	}else if(key=='S'|| key=='s'){
+		delta_x = 0;
+		delta_y = 1;
+	}else if(key=='A'|| key=='a'){
+		delta_x = -1;
+		delta_y = 0;
+	}else if(key=='D'|| key=='d'){
+		delta_x = 1;
+		delta_y = 0;
+	}else{
+		return;
+	}
+	//让最后一个位置消失（清除屏幕中不属于蛇的'#'） 
+	DrawChar(g_snack.pos[g_snack.size-1].x,g_snack.pos[g_snack.size-1].y,' ');
+	//修改数组位置  
+	for(int i=g_snack.size-1;i>0;i--){
+			g_snack.pos[i].x =g_snack.pos[i-1].x;
+			g_snack.pos[i].y =g_snack.pos[i-1].y;
+	}
+			g_snack.pos[0].x +=delta_x;
+			g_snack.pos[0].y +=delta_y;
+	if(key=='E'|| key=='e'){
+		delta_x = 0;
+		delta_y = 0;
+	}
+}
+
+//吃东西
+void EatFood(){
+	if(g_snack.pos[0].x==g_food.x && g_snack.pos[0].y==g_food.y){    
+		g_snack.size++; //蛇长度增加 尾节点 跟食物坐标一样
+		g_snack.pos[g_snack.size-1].x = g_food.x;
+		g_snack.pos[g_snack.size-1].y = g_food.y;
+		InitFood(); //更新食物
+		score++;
+	} 
+}
+
+//判断游戏是否结束
+int GameOver(){
+	//撞自己
+	for(int i =1 ; i<g_snack.size-1 ; i++){
+		if(g_snack.pos[0].x==g_snack.pos[i].x && g_snack.pos[0].y==g_snack.pos[i].y){
+		return 1;
+		}
+	}
+	//撞墙
+	if(g_snack.pos[0].x>=MAP_WIDTH || g_snack.pos[0].y >=MAP_HEIGHT){ 
+		return 1;	
+	}else {
+		return 0;
+	}
 }
 
 //更新屏幕
 void UpdateScreen(){
 	//画贪吃蛇
 	DrawSnack();
-
+	//更新食物
+	EatFood();
 }
 
-/*****************************************************************************/
+/*********************************************************************************************/
 
 void Init(){
-	//绘制地图
+	
 	InitMap();
-	//初始化贪吃蛇
 	InitSnack();
-	//初始化食物
 	InitFood();
 }
 
 void GameLoop(){
+	int key=0;
+	score=0;
 	while(1){
-		HideCursor();
+		HideCursor();		
+		//检测按键输入
+		if(_kbhit()){
+			key = _getch();
+		}
+		if(key=='q'|| key=='Q'){
+			return;
+		}
+		//移动贪吃蛇
+		SanckMove(key);
+		//判断是否游戏结束
+		int x = GameOver();
+		if(x==1){
+			return;
+		}
+		//更新屏幕
 		UpdateScreen();
 		Sleep(100);
 	}
 }
 
 void Score(){
-
+	COORD pos;
+	pos.X=0;
+	pos.Y=MAP_HEIGHT+1;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),pos);
+	printf("游戏结束，总得分=%d\n",score);
 }
-
+/**********************************************************************************************/
 int main(int argc, char* argv[])
 {
-	Init();//初始化
-
-	GameLoop(); //游戏主循环
-
-	Score();  //打印得分
+	Init();
+	GameLoop(); 
+	Score();  
 
 	return 0;
 
